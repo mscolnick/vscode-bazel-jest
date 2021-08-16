@@ -83,7 +83,7 @@
   },
   "dependencies": {
     "@types/vscode": "^1.59.0",
-    "source-map-support": "^0.5.19",
-    "ts-morph": "^11.0.3"
+    "jest-editor-support": "^29.0.0",
+    "source-map-support": "^0.5.19"
   }
 }

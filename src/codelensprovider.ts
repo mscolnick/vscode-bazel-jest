@@ -1,45 +1,62 @@
+import { parse, ParsedNode } from "jest-editor-support";
 import * as vscode from "vscode";
+import { CodeLens, Range } from "vscode";
 import { Instruction } from "./instruction";
-import { Parser } from "./parser/parser";
+import { escapeRegExp, findFullTestName } from "./util";
+import { TestSpec } from "./utils/spec";
 
-export class CodeLensProvider implements vscode.CodeLensProvider {
-  constructor(private readonly languageServer: Parser) {}
+function getTestsBlocks(parsedNode: ParsedNode, parseResults: ParsedNode[]): CodeLens[] {
+  const codeLens: CodeLens[] = [];
 
-  public get selector(): vscode.DocumentSelector {
-    return [
-      {
-        language: "typescript",
-        scheme: "file",
-        pattern: "**/*.{spec,test}.{ts,tsx}",
-      },
-      {
-        language: "typescriptreact",
-        scheme: "file",
-        pattern: "**/*.{spec,test}.{ts,tsx}",
-      },
-    ];
+  parsedNode.children?.forEach((subNode) => {
+    codeLens.push(...getTestsBlocks(subNode, parseResults));
+  });
+
+  const range = new Range(parsedNode.start.line - 1, parsedNode.start.column, parsedNode.end.line - 1, parsedNode.end.column);
+
+  if (parsedNode.type === "expect") {
+    return [];
   }
 
-  public async provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.CodeLens[]> {
-    const testSpecs = await this.languageServer.getTestSpecs(document.getText(), document, token);
-    console.log("# testSpecs", testSpecs.length);
+  const fullTestName = escapeRegExp(findFullTestName(parsedNode.start.line, parseResults));
 
-    const lenses = testSpecs.flatMap((spec) => {
-      if (spec.specFilter) {
-        return [
-          new vscode.CodeLens(spec.range, { title: "Run Test", command: "bazel-jest.runTest", arguments: [spec, Instruction.Test] }),
-          new vscode.CodeLens(spec.range, { title: "Watch Test", command: "bazel-jest.runTest", arguments: [spec, Instruction.Watch] }),
-          new vscode.CodeLens(spec.range, { title: "Update Snapshots", command: "bazel-jest.runTest", arguments: [spec, Instruction.UpdateSnapshots] }),
-        ];
-      } else {
-        return [
-          new vscode.CodeLens(spec.range, { title: "Run All Tests", command: "bazel-jest.runTest", arguments: [spec, Instruction.Test] }),
-          new vscode.CodeLens(spec.range, { title: "Watch All Tests", command: "bazel-jest.runTest", arguments: [spec, Instruction.Watch] }),
-          new vscode.CodeLens(spec.range, { title: "Update Snapshots", command: "bazel-jest.runTest", arguments: [spec, Instruction.UpdateSnapshots] }),
-        ];
-      }
-    });
+  codeLens.push(
+    new CodeLens(range, {
+      title: "Run Test",
+      command: "bazel-jest.runTest",
+      arguments: [new TestSpec(fullTestName, range), Instruction.Test],
+    }),
+    new CodeLens(range, {
+      title: "Watch Test",
+      command: "bazel-jest.runTest",
+      arguments: [new TestSpec(fullTestName, range), Instruction.Watch],
+    }),
+    new CodeLens(range, {
+      title: "Update Snapshots",
+      command: "bazel-jest.runTest",
+      arguments: [new TestSpec(fullTestName, range), Instruction.UpdateSnapshots],
+    }),
+  );
 
-    return lenses;
+  return codeLens;
+}
+
+export class CodeLensProvider implements vscode.CodeLensProvider {
+  public selector: vscode.DocumentSelector = {
+    pattern: "**/*.{spec,test}.{ts,tsx,js,jsx}",
+  };
+
+  public async provideCodeLenses(document: vscode.TextDocument): Promise<vscode.CodeLens[]> {
+    try {
+      const text = document.getText();
+      const parseResults = parse(document.fileName, text).root.children ?? [];
+      const codeLens: CodeLens[] = [];
+      parseResults.forEach((parseResult) => codeLens.push(...getTestsBlocks(parseResult, parseResults)));
+      return codeLens;
+    } catch (e) {
+      // Ignore error and keep showing Run/Debug buttons at same position
+      console.error("bazel-jest cannot parse code-lens", e);
+      return [];
+    }
   }
 }

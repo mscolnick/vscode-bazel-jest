@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
 import { loadConfig } from "./config";
 import { Instruction } from "./instruction";
-import { TestSpec } from "./parser/spec";
 import { getOrCreateTerminal } from "./terminal/getOrCreateTerminal";
 import { getPaths } from "./utils/getPaths";
+import { TestSpec } from "./utils/spec";
 
-export function runTestsInFile(editor: vscode.TextEditor, instruction = Instruction.Watch): void {
+export async function runTestsInFile(editor: vscode.TextEditor, instruction = Instruction.Watch): Promise<void> {
   // Document and Workspace.
   const document = editor.document;
   const workspace = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -21,12 +21,12 @@ export function runTestsInFile(editor: vscode.TextEditor, instruction = Instruct
   const paths = getPaths(document);
 
   // Run command
-  runBazel(workspace, instruction, paths.bazelPackagePath, `--runTestsByPath=${paths.pathToFile}`);
+  await runBazel(workspace, instruction, paths.bazelPackagePath, `--runTestsByPath=${paths.pathToFile}`);
 }
 
-export function runTestFromCodeLens(editor: vscode.TextEditor, spec: TestSpec, instruction: Instruction): void {
+export async function runTestFromCodeLens(editor: vscode.TextEditor, spec: TestSpec, instruction: Instruction): Promise<void> {
   // Workspace.
-  const document = spec.document;
+  const document = editor.document;
   const workspace = vscode.workspace.getWorkspaceFolder(editor.document.uri);
   if (!workspace) {
     return;
@@ -36,10 +36,10 @@ export function runTestFromCodeLens(editor: vscode.TextEditor, spec: TestSpec, i
   const paths = getPaths(document);
 
   // Run command
-  runBazel(workspace, instruction, paths.bazelPackagePath, `--testNamePattern='${spec.specFilter}'`);
+  await runBazel(workspace, instruction, paths.bazelPackagePath, `--testNamePattern='${spec.name}'`);
 }
 
-function runBazel(workspace: vscode.WorkspaceFolder, instruction: Instruction, bazelPackagePath: string, testFilter: string) {
+async function runBazel(workspace: vscode.WorkspaceFolder, instruction: Instruction, bazelPackagePath: string, testFilter: string): Promise<void> {
   // Terminal.
   const terminal = getOrCreateTerminal(workspace);
   terminal.show(true);
@@ -51,5 +51,6 @@ function runBazel(workspace: vscode.WorkspaceFolder, instruction: Instruction, b
   const bazelOptions = config.extraArgs;
   const consoleCommand = `${bazelCommand} ${bazelOptions} ${bazelPackagePath}:${bazelTarget} --test_arg="${testFilter}"`;
 
+  await vscode.commands.executeCommand("workbench.action.terminal.clear");
   terminal.sendText(consoleCommand, true);
 }

@@ -2,8 +2,7 @@ import * as vscode from "vscode";
 import { CodeLensProvider } from "./CodeLensProvider";
 import { runTestFromCodeLens, runTestsInFile } from "./commands";
 import { Instruction } from "./instruction";
-import { Parser } from "./parser/parser";
-import { TestSpec } from "./parser/spec";
+import { TestSpec } from "./utils/spec";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -30,8 +29,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   ];
 
-  const languageServer = new Parser();
-  const codeLensProvider = new CodeLensProvider(languageServer);
+  const codeLensProvider = new CodeLensProvider();
   vscode.languages.registerCodeLensProvider(codeLensProvider.selector, codeLensProvider);
 
   context.subscriptions.push(...commands);
