@@ -1,0 +1,89 @@
+{
+  "name": "bazel-jest",
+  "displayName": "Bazel Jest Runner",
+  "description": "Run Jest test with Bazel in VSCode",
+  "version": "0.1.0",
+  "files": [
+    "out",
+    "images"
+  ],
+  "publisher": "mscolnick",
+  "engines": {
+    "vscode": "^1.59.0"
+  },
+  "icon": "images/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mscolnick/vscode-bazel-jest.git"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "bazel",
+    "jest",
+    "test",
+    "runner"
+  ],
+  "activationEvents": [
+    "onLanguage:typescript",
+    "onCommand:bazel-jest.runTest",
+    "onCommand:bazel-jest.runTestsInFile"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "bazel-jest.runTestsInFile",
+        "title": "Bazel-Jest: Run tests in current file"
+      },
+      {
+        "command": "bazel-jest.watchTestsInFile",
+        "title": "Bazel-Jest: Watch tests in current file"
+      },
+      {
+        "command": "bazel-jest.updateSnapshotForFile",
+        "title": "Bazel-Jest: Update snapshot for tests in current file"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Bazel Jest",
+      "properties": {
+        "bazel-jest.extraArgs": {
+          "type": "string",
+          "default": "--test_output=errors",
+          "description": "'bazel test' additional args"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "lint": "eslint . --ext .ts",
+    "lint-fix": "eslint . --ext .ts --fix"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^20.0.0",
+    "@rollup/plugin-node-resolve": "^13.0.4",
+    "@rollup/plugin-typescript": "^8.2.5",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^16.6.1",
+    "@typescript-eslint/eslint-plugin": "^4.29.1",
+    "@typescript-eslint/parser": "^4.29.1",
+    "eslint": "^7.32.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^3.4.0",
+    "mocha": "^9.0.3",
+    "prettier": "^2.3.2",
+    "rollup": "^2.56.2",
+    "typescript": "^4.3.5"
+  },
+  "dependencies": {
+    "@types/vscode": "^1.59.0",
+    "source-map-support": "^0.5.19",
+    "ts-morph": "^11.0.3"
+  }
+}
