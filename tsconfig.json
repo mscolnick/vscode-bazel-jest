@@ -6,6 +6,7 @@
       "lib": ["ES6"],
       "noUnusedLocals": true,
       "noUnusedParameters": true,
+      "resolveJsonModule": true,
       "strict": true,
       "baseUrl": "."
     },
